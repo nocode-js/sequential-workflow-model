@@ -33,6 +33,9 @@ export class DefinitionWalker {
 		this.resolvers = resolvers ? resolvers.concat(defaultResolvers) : defaultResolvers;
 	}
 
+	/**
+	 * Returns children of the step.
+	 */
 	public getChildren(step: Step): StepChildren | null {
 		const count = this.resolvers.length;
 		for (let i = 0; i < count; i++) {
