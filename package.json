@@ -1,7 +1,7 @@
 {
 	"name": "sequential-workflow-model",
 	"description": "Extendable data model of sequential workflow.",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"homepage": "https://nocode-js.com/",
 	"author": {
 		"name": "NoCode JS",
@@ -35,13 +35,21 @@
 	},
 	"scripts": {
 		"clean": "rm -rf lib",
-		"build": "yarn clean && rollup -c"
+		"build": "yarn clean && rollup -c",
+		"prettier": "prettier --check ./src",
+		"prettier:fix": "prettier --write ./src",
+		"test:single": "jest",
+		"test": "jest --clearCache && jest --watchAll"
 	},
 	"devDependencies": {
 		"typescript": "^4.9.5",
 		"rollup-plugin-dts": "^5.2.0",
 		"rollup-plugin-typescript2": "^0.34.1",
-		"rollup": "^3.18.0"
+		"rollup": "^3.18.0",
+		"prettier": "^2.8.8",
+		"@types/jest": "^29.5.1",
+		"jest": "^29.5.0",
+		"ts-jest": "^29.1.0"
 	},
 	"keywords": [
 		"workflow",
