@@ -1,0 +1,30 @@
+name: main
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    name: Build
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+      - name: Install
+        run: yarn install
+      - name: Build
+        run: yarn build
+      - name: Prettier
+        run: yarn prettier
+      - name: Tests
+        run: yarn test:single

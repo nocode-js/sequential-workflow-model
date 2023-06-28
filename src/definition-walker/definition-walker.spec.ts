@@ -27,8 +27,8 @@ describe('DefinitionWalker', () => {
 	}
 
 	const taskFoo = createTask('foo');
-	const ifAlfa = createIf('beta', taskFoo);
-	const ifBeta = createIf('alfa', ifAlfa);
+	const ifAlfa = createIf('alfa', taskFoo);
+	const ifBeta = createIf('beta', ifAlfa);
 	const loop = {
 		componentType: 'container',
 		id: 'loop',
@@ -98,6 +98,13 @@ describe('DefinitionWalker', () => {
 			const parents = walker.getParents(definition, definition.sequence);
 			expect(parents.length).toEqual(0);
 		});
+
+		it('returns parents when passed stepId', () => {
+			const parents = walker.getParents(definition, 'ifbeta');
+			expect(parents.length).toEqual(2);
+			expect(parents[0]).toBe(loop);
+			expect(parents[1]).toBe(ifBeta);
+		});
 	});
 
 	describe('findById', () => {
@@ -108,17 +115,79 @@ describe('DefinitionWalker', () => {
 
 		it('returns task step', () => {
 			const found = walker.findById(definition, taskFoo.id);
-			expect(found).toEqual(taskFoo);
+			expect(found).toBe(taskFoo);
 		});
 
 		it('returns container step', () => {
 			const found = walker.findById(definition, loop.id);
-			expect(found).toEqual(loop);
+			expect(found).toBe(loop);
 		});
 
 		it('returns switch step', () => {
 			const found = walker.findById(definition, ifBeta.id);
-			expect(found).toEqual(ifBeta);
+			expect(found).toBe(ifBeta);
+		});
+	});
+
+	describe('forEach', () => {
+		it('iterates over defition', () => {
+			let count = 0;
+
+			walker.forEach(definition, (step, index, parent) => {
+				switch (count) {
+					case 0:
+						expect(step).toBe(definition.sequence[0]);
+						expect(index).toBe(0);
+						expect(parent).toBe(definition.sequence);
+						break;
+					case 1:
+						expect(step).toBe((definition.sequence[0] as BranchedStep).branches['false'][0]);
+						break;
+					case 2:
+						expect(step).toBe(loop);
+						break;
+					case 3:
+						expect(step).toBe(ifBeta);
+						expect(index).toBe(0);
+						expect(parent).toBe(loop.sequence);
+						break;
+					case 4:
+						expect(step).toBe(ifAlfa);
+						break;
+					case 5:
+						expect(step).toBe(taskFoo);
+						break;
+				}
+				count++;
+			});
+
+			expect(count).toEqual(6);
+		});
+
+		it('iterates over sequence', () => {
+			const steps: Step[] = [];
+
+			walker.forEach(loop.sequence, step => {
+				steps.push(step);
+			});
+
+			expect(steps.length).toEqual(3);
+			expect(steps[0]).toBe(ifBeta);
+			expect(steps[1]).toBe(ifAlfa);
+			expect(steps[2]).toBe(taskFoo);
+		});
+
+		it('stops when callback returns false', () => {
+			let count = 0;
+
+			walker.forEach(definition, () => {
+				count++;
+				if (count === 2) {
+					return false;
+				}
+			});
+
+			expect(count).toEqual(2);
 		});
 	});
 });
