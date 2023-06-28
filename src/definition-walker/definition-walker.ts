@@ -26,6 +26,8 @@ type StepWithParentSequenceOrName = StepWithParentSequence | string;
 
 export type StepChildrenResolver = (step: Step) => StepChildren | null;
 
+export type StepForEachCallback = (step: Step, index: number, parentSequence: Sequence) => void | boolean;
+
 export class DefinitionWalker {
 	private readonly resolvers: StepChildrenResolver[];
 
@@ -34,7 +36,8 @@ export class DefinitionWalker {
 	}
 
 	/**
-	 * Returns children of the step.
+	 * Returns children of the step. If the step doesn't have children, returns null.
+	 * @param step The step.
 	 */
 	public getChildren(step: Step): StepChildren | null {
 		const count = this.resolvers.length;
@@ -47,10 +50,24 @@ export class DefinitionWalker {
 		return null;
 	}
 
-	public getParents(definition: Definition, needle: Sequence | Step): StepOrName[] {
+	/**
+	 * Returns the parents of the step or the sequence.
+	 * @param definition The definition.
+	 * @param needle The step, stepId or sequence to find.
+	 * @returns The parents of the step or the sequence.
+	 */
+	public getParents(definition: Definition, needle: Sequence | Step | string): StepOrName[] {
 		const result: StepWithParentSequenceOrName[] = [];
-		const searchSequence = Array.isArray(needle) ? needle : null;
-		const searchStepId = !searchSequence ? (needle as Step).id : null;
+
+		let searchSequence: Sequence | null = null;
+		let searchStepId: string | null = null;
+		if (Array.isArray(needle)) {
+			searchSequence = needle;
+		} else if (typeof needle === 'string') {
+			searchStepId = needle;
+		} else {
+			searchStepId = needle.id;
+		}
 
 		if (this.find(definition.sequence, searchSequence, searchStepId, result)) {
 			result.reverse();
@@ -85,6 +102,11 @@ export class DefinitionWalker {
 
 	public getById(definition: Definition, stepId: string): Step {
 		return this.getParentSequence(definition, stepId).step;
+	}
+
+	public forEach(sequenceOrDefinition: Sequence | Definition, callback: StepForEachCallback) {
+		const sequence = Array.isArray(sequenceOrDefinition) ? sequenceOrDefinition : sequenceOrDefinition.sequence;
+		this.iterate(sequence, callback);
 	}
 
 	private find(
@@ -138,5 +160,46 @@ export class DefinitionWalker {
 			}
 		}
 		return false;
+	}
+
+	private iterate(sequence: Sequence, callback: StepForEachCallback): boolean {
+		const count = sequence.length;
+		for (let index = 0; index < count; index++) {
+			const step = sequence[index];
+			if (callback(step, index, sequence) === false) {
+				return false;
+			}
+
+			const children = this.getChildren(step);
+			if (children) {
+				switch (children.type) {
+					case StepChildrenType.sequence:
+						{
+							const childSequence = children.items as Sequence;
+							if (this.iterate(childSequence, callback) === false) {
+								return false;
+							}
+						}
+						break;
+
+					case StepChildrenType.branches:
+						{
+							const branches = children.items as Branches;
+							const branchNames = Object.keys(branches);
+							for (const branchName of branchNames) {
+								const parentSequence = branches[branchName];
+								if (this.iterate(parentSequence, callback) === false) {
+									return false;
+								}
+							}
+						}
+						break;
+
+					default:
+						throw new Error(`Step children type ${children.type} is not supported`);
+				}
+			}
+		}
+		return true;
 	}
 }
