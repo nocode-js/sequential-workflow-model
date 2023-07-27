@@ -104,9 +104,16 @@ export class DefinitionWalker {
 		return this.getParentSequence(definition, stepId).step;
 	}
 
-	public forEach(sequenceOrDefinition: Sequence | Definition, callback: StepForEachCallback) {
-		const sequence = Array.isArray(sequenceOrDefinition) ? sequenceOrDefinition : sequenceOrDefinition.sequence;
-		this.iterate(sequence, callback);
+	public forEach(definition: Definition, callback: StepForEachCallback) {
+		this.iterateSequence(definition.sequence, callback);
+	}
+
+	public forEachSequence(sequence: Sequence, callback: StepForEachCallback) {
+		this.iterateSequence(sequence, callback);
+	}
+
+	public forEachChildren(step: Step, callback: StepForEachCallback) {
+		this.iterateStep(step, callback);
 	}
 
 	private find(
@@ -138,7 +145,6 @@ export class DefinitionWalker {
 							}
 						}
 						break;
-
 					case StepChildrenType.branches:
 						{
 							const branches = children.items as Branches;
@@ -153,51 +159,52 @@ export class DefinitionWalker {
 							}
 						}
 						break;
-
 					default:
-						throw new Error(`Step children type ${children.type} is not supported`);
+						throw new Error(`Not supported step children type: ${children.type}`);
 				}
 			}
 		}
 		return false;
 	}
 
-	private iterate(sequence: Sequence, callback: StepForEachCallback): boolean {
+	private iterateSequence(sequence: Sequence, callback: StepForEachCallback): boolean {
 		const count = sequence.length;
 		for (let index = 0; index < count; index++) {
 			const step = sequence[index];
 			if (callback(step, index, sequence) === false) {
 				return false;
 			}
+			if (!this.iterateStep(step, callback)) {
+				return false;
+			}
+		}
+		return true;
+	}
 
-			const children = this.getChildren(step);
-			if (children) {
-				switch (children.type) {
-					case StepChildrenType.sequence:
-						{
-							const childSequence = children.items as Sequence;
-							if (this.iterate(childSequence, callback) === false) {
+	private iterateStep(step: Step, callback: StepForEachCallback): boolean {
+		const children = this.getChildren(step);
+		if (children) {
+			switch (children.type) {
+				case StepChildrenType.sequence:
+					{
+						const sequence = children.items as Sequence;
+						if (!this.iterateSequence(sequence, callback)) {
+							return false;
+						}
+					}
+					break;
+				case StepChildrenType.branches:
+					{
+						const sequences = Object.values(children.items as Branches);
+						for (const sequence of sequences) {
+							if (!this.iterateSequence(sequence, callback)) {
 								return false;
 							}
 						}
-						break;
-
-					case StepChildrenType.branches:
-						{
-							const branches = children.items as Branches;
-							const branchNames = Object.keys(branches);
-							for (const branchName of branchNames) {
-								const parentSequence = branches[branchName];
-								if (this.iterate(parentSequence, callback) === false) {
-									return false;
-								}
-							}
-						}
-						break;
-
-					default:
-						throw new Error(`Step children type ${children.type} is not supported`);
-				}
+					}
+					break;
+				default:
+					throw new Error(`Not supported step children type: ${children.type}`);
 			}
 		}
 		return true;
