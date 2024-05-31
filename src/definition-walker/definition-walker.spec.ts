@@ -12,7 +12,8 @@ describe('DefinitionWalker', () => {
 				true: [],
 				false: [falseStep]
 			},
-			properties: {}
+			properties: {},
+			items: []
 		};
 	}
 
@@ -22,7 +23,8 @@ describe('DefinitionWalker', () => {
 			id: 'task' + name,
 			type: 'task' + name,
 			name,
-			properties: {}
+			properties: {},
+			items: []
 		};
 	}
 
@@ -35,7 +37,8 @@ describe('DefinitionWalker', () => {
 		name: 'loop',
 		type: 'loop',
 		properties: {},
-		sequence: [ifBeta]
+		sequence: [ifBeta],
+		items: []
 	} as SequentialStep;
 	const definition = {
 		sequence: [

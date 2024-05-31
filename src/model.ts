@@ -50,6 +50,12 @@ export interface Step {
 	 * @description The properties of the step.
 	 */
 	properties: Properties;
+
+	/**
+	 * @description The items of the step.
+	 */
+	items: string[]
+	
 }
 
 /**
