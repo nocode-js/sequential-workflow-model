@@ -7,6 +7,11 @@
 		"name": "NoCode JS",
 		"url": "https://nocode-js.com/"
 	},
+	"contributors": [
+		{
+			"name": "Abraham Calvillo"
+		}
+	],
 	"license": "MIT",
 	"type": "module",
 	"main": "./lib/esm/index.js",
