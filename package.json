@@ -1,7 +1,7 @@
 {
 	"name": "sequential-workflow-model",
 	"description": "Extendable data model of sequential workflow.",
-	"version": "0.1.4",
+	"version": "0.2.0",
 	"homepage": "https://nocode-js.com/",
 	"author": {
 		"name": "NoCode JS",
